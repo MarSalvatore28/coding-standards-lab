@@ -1,13 +1,14 @@
 """Student Grade Management System.
 
-Creates student records, stores numeric grades and calculates the
-average, letter grade and pass/fail status of each student.
+Creates student records, stores numeric grades and produces a summary
+report with average, letter grade, pass/fail and honor roll status.
 Invalid input never crashes the program; a clear error message is shown.
 """
 
 MIN_GRADE = 0.0
 MAX_GRADE = 100.0
 PASSING_AVERAGE = 60.0
+HONOR_ROLL_AVERAGE = 90.0
 
 # (minimum average, letter) ordered from highest to lowest.
 LETTER_THRESHOLDS = (
@@ -71,16 +72,41 @@ class Student:
         """Return True if the average is 60 or higher."""
         return self.calculate_average() >= PASSING_AVERAGE
 
-    def report(self):
-        """Return a formatted report with the student's results."""
+    def is_on_honor_roll(self):
+        """Return True if the average is 90 or higher."""
+        return self.calculate_average() >= HONOR_ROLL_AVERAGE
+
+    def remove_grade_by_value(self, value):
+        """Remove the first grade equal to value."""
+        grade = self._validate_grade(value)
+        if grade not in self.grades:
+            raise InvalidInputError(f"Grade {grade} was not found.")
+        self.grades.remove(grade)
+
+    def remove_grade_by_index(self, index):
+        """Remove the grade at the given zero-based index."""
+        if isinstance(index, bool) or not isinstance(index, int):
+            raise InvalidInputError(f"Index '{index}' is not an integer.")
+        if not 0 <= index < len(self.grades):
+            raise InvalidInputError(
+                f"Index {index} is out of bounds "
+                f"(student has {len(self.grades)} grades)."
+            )
+        del self.grades[index]
+
+    def summary_report(self):
+        """Return a formatted summary report for the student."""
         status = "Passed" if self.has_passed() else "Failed"
         lines = (
-            f"ID: {self.student_id}",
-            f"Name: {self.name}",
-            f"Grades Count: {len(self.grades)}",
-            f"Average: {self.calculate_average():.2f}",
-            f"Final Grade: {self.letter_grade()}",
-            f"Status: {status}",
+            "=" * 34,
+            f"{'Student ID:':<18}{self.student_id}",
+            f"{'Student Name:':<18}{self.name}",
+            f"{'Number of Grades:':<18}{len(self.grades)}",
+            f"{'Average Grade:':<18}{self.calculate_average():.2f}",
+            f"{'Letter Grade:':<18}{self.letter_grade()}",
+            f"{'Pass/Fail:':<18}{status}",
+            f"{'Honor Roll:':<18}{self.is_on_honor_roll()}",
+            "=" * 34,
         )
         return "\n".join(lines)
 
@@ -103,7 +129,7 @@ def safe_call(action, *args):
 
 
 def main():
-    """Demonstrate the core requirements."""
+    """Demonstrate every functional requirement."""
     print("--- Invalid students ---")
     create_student("", "Ana")
     create_student("S-002", None)
@@ -118,7 +144,13 @@ def main():
     safe_call(student.add_grade, "Fifty")
     safe_call(student.add_grade, 150)
 
-    print(student.report())
+    print("--- Removing grades ---")
+    safe_call(student.remove_grade_by_value, 72.5)
+    safe_call(student.remove_grade_by_value, 10)
+    safe_call(student.remove_grade_by_index, 1)
+    safe_call(student.remove_grade_by_index, 5)
+
+    print(student.summary_report())
 
 
 if __name__ == "__main__":
